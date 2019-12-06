@@ -1,14 +1,29 @@
 
-// let particle = new Array(100).fill(0).map(makeParticle)
 let particles = []
 let magics = []
-let m = false
-// let bg
+// let m = false
+let mousePositionX = []
+let mousePositionY = []
+
+let vx
+let vy
+let v
+let nowvx = 0
+let nowvy = 0
+let positionX
+let positionY
+
+// let vxFastToLeft = false;
+// let vxFastToRight = false;
+let fast = false;
+
+// let magicsXToRight = []
+// let magicsXToLeft = []
+let magicsToRight = []
 
 export function setup() {
     createCanvas(windowWidth,windowHeight)
     
-    // bg = loadImage('frozen-background.jpg')
 }
 
 export function draw() {
@@ -20,22 +35,68 @@ export function draw() {
     for (let i = 0; i < random(2); i++) {
         particles.push (new makeParticle())
     }
-    // makeParticle(mouseX,mouseY);
-    // console.log(mouseX,mouseY);
 
-    // window.addEventListener("mousemove",makeParticle(mouseX,mouseY));
     particles.forEach(processParticle) 
 
 
-    if (m == true){
-        for(let i = 0; i < random(5); i ++){
-            magics.push (new makeMagic())
-        }
+    // magics.forEach(processMagic)
+
+    mousePositionX[0] = mousePositionX[1]
+    mousePositionY[0] = mousePositionY[1]
+
+    mousePositionX[1] = mouseX
+    mousePositionY[1] = mouseY
+
+    vx = mousePositionX[1] - mousePositionX[0]
+    vy = mousePositionY[1] - mousePositionY[0]
+
+    v = Math.sqrt(vx*vx + vy*vy)
+
+    // magicsXToLeft.forEach(processMagicXToLeft)
+    // magicsXToRight.forEach(processMagicXToRight)
+    magicsToRight.forEach(processMagicToRight)
+
+    // if(vx > 50){
+    //     vxFastToRight = true;
+    //     console.log(vx+'right')
+    // }
+    // if(vx < -50){
+    //     vxFastToLeft = true;
+    //     console.log(vx+'left')
+    // }
+
+    if(v > 35){
+        fast = true;
+        nowvx = vx
+        nowvy = vy
+        // console.log(v)
+        positionX = mouseX
+        positionY = mouseY
     }
 
-    console.log(m)
+    if(fast == true){
+        for(let i = 0; i < random(5); i ++){
+            magicsToRight.push (new makeMagicToRight())
+            // console.log(magicsToRight)
+        }
+        
 
-    magics.forEach(processMagic)
+    }
+    
+
+    // if (vxFastToRight == true){
+    //     for(let i = 0; i < random(5); i ++){
+    //         magicsXToRight.push (new makeMagicXToRight())
+    //     }
+    // }
+    // if (vxFastToLeft == true){
+    //     for(let i = 0; i < random(5); i ++){
+    //         magicsXToLeft.push (new makeMagicXToLeft())
+    //     }
+    // }
+
+
+
 
 }
 
@@ -54,21 +115,6 @@ function makeParticle(){
 }
 
 function processParticle(particle) {
-
-    // let xFromMouse = mouseX - particle.x
-    // let yFromMouse = mouseY - particle.y
-    // let fromMouse = Math.sqrt(xFromMouse ** 2 + yFromMouse ** 2)
-    // if (fromMouse < 100){
-    //     console.info('close',fromMouse)
-    //     particle.dx = particle.dx - xFromMouse * 0.01
-    //     particle.dy = particle.dy - yFromMouse * 0.01
-
-    // }
-    // if (particle.y > windowHeight || particle.y < 0){
-    //     particle.dy = -particle.dy
-        
-    // }
-
     if (particle.x > windowWidth || particle.x < 0){
         particle.dx = -particle.dx
     }
@@ -84,58 +130,163 @@ function processParticle(particle) {
     ellipse(particle.x,particle.y,particle.size,particle.size)
 }
 
-export function mousePressed(){
-     m = true
-}
+// export function mousePressed(){
+//      m = true
+// }
 
-let cx = 0
-let randomx = Math.random()*800
-let randomy = Math.random()*500
- function makeMagic(){
-     let magicX = randomx + cx
-     let magicY = randomy
-     cx = cx + 4
-    let magic = {
+// let cxToRight = 0
+//  function makeMagicXToRight(){
+//      let magicX = mouseX + cxToRight
+//      let magicY = mouseY
+//      cxToRight = cxToRight + 4
+//     let magicXToRight = {
+//         x: magicX,
+//         y: magicY,
+//         size: (Math.random() * 5) + 3,
+//         magicdx: (Math.random())-1,
+//         magicdy: Math.random()*2,
+
+//     }
+//     return magicXToRight;
+// }
+
+// let cxToLeft = 0
+//  function makeMagicXToLeft(){
+//      let magicX = mouseX - cxToLeft;
+//      let magicY = mouseY;
+//      cxToLeft = cxToLeft + 4;
+//     let magicXToLeft = {
+//         x: magicX,
+//         y: magicY,
+//         size: (Math.random() * 5) + 3,
+//         magicdx: (Math.random())-1,
+//         magicdy: Math.random()*2,
+
+//     }
+//     return magicXToLeft
+// }
+
+let cxtoright = 0
+let cytoright = 0
+let dx
+let dy
+ function makeMagicToRight(){
+     let magicX = positionX + cxtoright
+     let magicY = positionY + cytoright
+     dx = nowvx/9
+     dy = nowvy/9
+    //  console.log(dx)
+     cxtoright = cxtoright + dx
+     cytoright = cytoright + dy
+    let magicToRight = {
         x: magicX,
         y: magicY,
         size: (Math.random() * 5) + 3,
         magicdx: (Math.random())-1,
         magicdy: Math.random()*2,
-
     }
-    return magic
+    return magicToRight;
+
 }
 
-function processMagic(magic){
+
+// function processMagicXToRight(magicXToRight){
+//     fill(120,194,196,100)
+//     noStroke()
+//     circle(magicXToRight.x,magicXToRight.y,magicXToRight.size+2) 
+//     fill(120,194,196,150)
+//     noStroke()
+//     circle(magicXToRight.x,magicXToRight.y,magicXToRight.size)
+//     fill(120,194,196,190)
+//     circle(magicXToRight.x,magicXToRight.y,magicXToRight.size-1)
+
+//     magicXToRight.magicdy = magicXToRight.magicdy * 0.995
+//     magicXToRight.magicdx = magicXToRight.magicdx * 0.995
+//     magicXToRight.x = magicXToRight.x + magicXToRight.magicdx
+//     magicXToRight.y = magicXToRight.y + magicXToRight.magicdy
+
+//     for (var i = magicsXToRight.length-1; i > -1; i--) {
+
+//     if (magicsXToRight[i].magicdy < 0.4) {
+//         magicsXToRight.splice(i, 1);
+//       }
+//     }
+
+//     if (cxToRight >= 500){
+//         vxFastToRight = false
+//         cxToRight = 0
+//     }
+
+// }
+
+// function processMagicXToLeft(magicXToLeft){
+//     fill(120,194,196,100);
+//     noStroke();
+//     circle(magicXToLeft.x,magicXToLeft.y,magicXToLeft.size+2); 
+//     fill(120,194,196,150);
+//     noStroke();
+//     circle(magicXToLeft.x,magicXToLeft.y,magicXToLeft.size);
+//     fill(120,194,196,190);
+//     circle(magicXToLeft.x,magicXToLeft.y,magicXToLeft.size-1);
+
+//     magicXToLeft.magicdy = magicXToLeft.magicdy * 0.995;
+//     magicXToLeft.magicdx = magicXToLeft.magicdx * 0.995;
+//     magicXToLeft.x = magicXToLeft.x + magicXToLeft.magicdx;
+//     magicXToLeft.y = magicXToLeft.y + magicXToLeft.magicdy;
+
+//     for (var i = magicsXToLeft.length-1; i > -1; i--) {
+
+//     if (magicsXToLeft[i].magicdy < 0.4) {
+//         magicsXToLeft.splice(i, 1);
+//       }
+//     }
+
+//     if (cxToLeft >= 500){
+//         vxFastToLeft = false;
+//         cxToLeft = 0;
+//     }
+// }
+
+function processMagicToRight(magicToRight){
+    fill(120,194,196,5)
+    noStroke()
+    circle(magicToRight.x,magicToRight.y,magicToRight.size+20) 
+    fill(120,194,196,10)
+    noStroke()
+    circle(magicToRight.x,magicToRight.y,magicToRight.size+15) 
+    fill(120,194,196,20)
+    noStroke()
+    circle(magicToRight.x,magicToRight.y,magicToRight.size+10) 
+    fill(120,194,196,30)
+    noStroke()
+    circle(magicToRight.x,magicToRight.y,magicToRight.size+6) 
     fill(120,194,196,100)
     noStroke()
-    circle(magic.x,magic.y,magic.size+2) 
+    circle(magicToRight.x,magicToRight.y,magicToRight.size+2) 
     fill(120,194,196,150)
     noStroke()
-    circle(magic.x,magic.y,magic.size)
+    circle(magicToRight.x,magicToRight.y,magicToRight.size)
     fill(120,194,196,190)
-    circle(magic.x,magic.y,magic.size-1)
+    circle(magicToRight.x,magicToRight.y,magicToRight.size-1)
 
-    magic.magicdy = magic.magicdy * 0.995
-    magic.magicdx = magic.magicdx * 0.995
-    magic.x = magic.x + magic.magicdx
-    magic.y = magic.y + magic.magicdy
+    magicToRight.magicdy = magicToRight.magicdy * 0.995
+    magicToRight.magicdx = magicToRight.magicdx * 0.995
+    magicToRight.x = magicToRight.x + magicToRight.magicdx
+    magicToRight.y = magicToRight.y + magicToRight.magicdy
 
-    for (var i = magics.length-1; i > -1; i--) {
+    for (var i = magicsToRight.length-1; i > -1; i--) {
 
-    if (magics[i].magicdy < 0.4) {
-        magics.splice(i, 1);
+    if (magicsToRight[i].magicdy < 0.8) {
+        magicsToRight.splice(i, 1);
       }
     }
 
-    if (cx >= 500){
-        m = false
-        cx = 0
-        randomy = random(500)
+    // console.log(cxtoright)
+
+    if (cxtoright >= 500 || cxtoright <= -500){
+        fast = false
+        cxtoright = 0
+        cytoright = 0
     }
 
 }
-
-
-
-// window.addEventListener('click',magic)
