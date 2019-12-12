@@ -12,7 +12,7 @@ let rightprevPoseY = [];
 
 //draw particles
 let particles = [];
-let magics = [];
+// let magics = [];
 // let m = false;
 // let magicsLeftXToRight = []
 // let magicsLeftXToLeft = []
@@ -23,21 +23,31 @@ let vyleft
 let vyright
 let vleft
 let vright
-let nowvx = 0
-let nowvy = 0
-let positionX
-let positionY
-// let fastleft = false;
-// let fastright = false;
-let fast = false;
-let magicsToRight = []
+let prevVleft = []
+let prevVright = []
+// let nowvxright = 0
+// let nowvyright = 0
+// let nowvxleft = 0
+// let nowvyleft = 0
+// let positionXright;
+// let positionYright;
+// let positionXleft;
+// let positionYleft;
 
+let fastleft = false;
+let fastright = false;
+// let fast = false;
+let magicsRight = []
+let magicsLeft = []
+let iceSound = document.getElementById('iceSound')
+let lastFastTimeright;
+let lastFastTimeleft;
 
 export function setup() {
-  createCanvas(640, 480);
+  createCanvas(windowWidth, windowHeight);
 
-  stats.showPanel(0);
-  document.body.appendChild(stats.dom);
+  // stats.showPanel(0);
+  // document.body.appendChild(stats.dom);
 
   window.addEventListener('storage', (event) => {
     if (event.key === 'posenet') {
@@ -52,32 +62,26 @@ export function draw() {
   clear();
   if (latestPoses) {
     drawPoses(latestPoses);
+    stats.end();
   }
-  stats.end();
 
   fill('black')
-  rect(0,0,640,480)
+  rect(0, 0, width, height)
   let t = frameCount / 60
 
   for (let i = 0; i < random(2); i++) {
-      particles.push (new makeParticle())
+    particles.push(new makeParticle())
   }
 
-  particles.forEach(processParticle) 
-  magicsToRight.forEach(processMagicToRight)
+  particles.forEach(processParticle)
+  magicsRight.forEach(processMagicRight)
+  magicsLeft.forEach(processMagicLeft)
 
 
 
-  // if (m == true){
-  //     for(let i = 0; i < random(5); i ++){
-  //         magics.push (new makeMagic())
-  //     }
-  // }
 
   // magics.forEach(processMagic)
 
-  // magicsLeftXToLeft.forEach(processMagicLeftXToLeft);
-  // magicsLeftXToRight.forEach(processMagicLeftXToRight);
 
 
 }
@@ -85,67 +89,155 @@ export function draw() {
 export function drawPoses(poses) {
   translate(width, 0);
   scale(-1.0, 1.0);
-  if(latestPoses.length > 0){
-    leftprevPoseX[0] = leftprevPoseX[1]
-    leftprevPoseY[0] = leftprevPoseY[1]
-    rightprevPoseX[0] = rightprevPoseX[1]
-    rightprevPoseY[0] = rightprevPoseY[1]
+  if (latestPoses.length > 0) {
+    if (latestPoses[0].pose.rightWrist.confidence > 0.1) {
+      // console.log(latestPoses[0].pose.rightEye.confidence);
+      rightprevPoseX[0] = rightprevPoseX[1]
+      rightprevPoseY[0] = rightprevPoseY[1]
+      rightprevPoseX[1] = latestPoses[0].pose.rightWrist.x
+      rightprevPoseY[1] = latestPoses[0].pose.rightWrist.y
+    }
+    if (latestPoses[0].pose.leftWrist.confidence > 0.1) {
+      leftprevPoseX[0] = leftprevPoseX[1]
+      leftprevPoseY[0] = leftprevPoseY[1]
+      leftprevPoseX[1] = latestPoses[0].pose.leftWrist.x
+      leftprevPoseY[1] = latestPoses[0].pose.leftWrist.y
 
+    }
 
-    leftprevPoseX[1] = latestPoses[0].pose.leftWrist.x
-    leftprevPoseY[1] = latestPoses[0].pose.leftWrist.y
-    rightprevPoseX[1] = latestPoses[0].pose.rightWrist.x
-    rightprevPoseY[1] = latestPoses[0].pose.rightWrist.y
 
     vxleft = leftprevPoseX[1] - leftprevPoseX[0]
     vyleft = leftprevPoseY[1] - leftprevPoseY[0]
     vxright = rightprevPoseX[1] - rightprevPoseX[0]
     vyright = rightprevPoseY[1] - rightprevPoseY[0]
 
-    vleft = Math.sqrt(vxleft*vxleft + vyleft*vyleft)
-    vright = Math.sqrt(vxright*vxright + vyright*vyright)
+    vleft = Math.sqrt(vxleft * vxleft + vyleft * vyleft)
+    vright = Math.sqrt(vxright * vxright + vyright * vyright)
+
+    prevVleft[0] = prevVleft[1]
+    prevVleft[1] = vleft
+    prevVright[0] = prevVright[1]
+    prevVright[1] = vright
 
 
-    if (vleft > 50 ){
-      fast = true;
-      nowvx = vxleft
-      nowvy = vyleft
-      positionX = leftprevPoseX[1]
-      positionY = leftprevPoseY[1]
-    }else if(vright>50){
-      fast = true
-      nowvx = vxright
-      nowvy = vyright
-      positionX = rightprevPoseX[1]
-      positionY = rightprevPoseY[1]
+
+
+
+    if (vleft > 50) {
+      // fast = true;
+      fastleft = true
+      if (streaksleft.length > 0) {
+        let streakleft = streaksleft[0]
+        if (!changeDirectionleft(streakleft.nowvxleft, streakleft.nowvyleft, vxleft, vyleft)) {
+          streakleft.nowvxleft = vxleft
+          streakleft.nowvyleft = vyleft
+          streakleft.positionXleft = leftprevPoseX[1]
+          streakleft.positionYleft = leftprevPoseY[1]
+
+        }
+      }
+
+    }
+    if (vright > 50) {
+      // fast = true
+      fastright = true;
+      if (streaksright.length > 0) {
+        let streakright = streaksright[0]
+        if (!changeDirectionright(streakright.nowvxright, streakright.nowvyright, vxright, vyright)) {
+          streakright.nowvxright = vxright
+          streakright.nowvyright = vyright
+          streakright.positionXright = rightprevPoseX[1]
+          streakright.positionYright = rightprevPoseY[1]
+
+        }
+      }
     }
 
-    if(fast == true ){
-      for(let i = 0; i < random(5); i ++){
-        magicsToRight.push (new makeMagic())
-        // console.log(magicsToRight)
+    function changeDirectionleft(nowvxleft, nowvyleft, vxleft, vyleft) {
+      let prevAngleleft = atan2(nowvyleft, nowvxleft)
+      let nowAngleleft = atan2(vyleft, vxleft)
+      if (abs(prevAngleleft - nowAngleleft) > 90 / 180 * PI) {
+        return true
+      }
     }
+    function changeDirectionright(nowvxright, nowvyright, vxright, vyright) {
+      let prevAngleright = atan2(nowvyright, nowvxright)
+      let nowAngleright = atan2(vyright, vxright)
+      if (abs(prevAngleright - nowAngleright) > 90 / 180 * PI) {
+        return true
+      }
     }
+
+    if (prevVright[0] > 50 && prevVright[1] < 50) {
+      // console.log(prevV)
+      iceSound.play()
+    }
+    if (prevVleft[0] > 50 && prevVleft[1] < 50) {
+      // console.log(prevV)
+      iceSound.play()
+    }
+
+
+    if (vleft > 50 && (!lastFastTimeleft || new Date() - lastFastTimeleft > 100)) {
+      lastFastTimeleft = new Date();
+      let streakleft = {
+        cxleft: 0,
+        cyleft: 0,
+        nowvxleft: vxleft,
+        nowvyleft: vyleft,
+        positionXleft: leftprevPoseX[1],
+        positionYleft: leftprevPoseY[1]
+      }
+      streaksleft.unshift(streakleft);
+    }
+    if (vright > 50 && (!lastFastTimeright || new Date() - lastFastTimeright > 100)) {
+      console.log('create streak right')
+      lastFastTimeright = new Date();
+      let streakright = {
+        cxright: 0,
+        cyright: 0,
+        nowvxright: vxright,
+        nowvyright: vyright,
+        positionXright: rightprevPoseX[1],
+        positionYright: rightprevPoseY[1],
+      }
+      streaksright.unshift(streakright);
+    }
+    if (vleft > 50) {
+      lastFastTimeleft = new Date();
+    }
+    if (vright > 50) {
+      lastFastTimeright = new Date();
+    }
+
+    if (fastright) {
+      console.log('fastright')
+      streaksright.forEach(startMagicright)
+      magicsRight = magicsRight.slice(0,100)
+    }
+    function startMagicright(streakright) {
+      console.log('start')
+      for (let i = 0; i < random(5); i++) {
+        magicsRight.unshift(new makeMagicright(streakright))
+      }
+
+    }
+    if (fastleft) {
+      streaksleft.forEach(startMakeMagicleft)
+      magicsLeft=magicsLeft.slice(0,100)
+    }
+    function startMakeMagicleft(streakleft) {
+      for (let i = 0; i < random(5); i++) {
+        magicsLeft.unshift(new makeMagicleft(streakleft))
+
+      }
+
+    }
+
   }
 
-  
-
-  // if(vxleftFastToRight == true){
-  //   for(let i = 0; i < random(5); i ++){
-  //     magicsLeftXToRight.push (new makeMagicLeftXToRight())
-  // }
-  // console.log('left x to right')
-  // }
-
-  // if(vxleftFastToLeft == true){
-  //   for(let i = 0; i < random(5); i ++){
-  //     magicsLeftXToLeft.push (new makeMagicLeftXToLeft())
-  //   }
-
-
-
-  drawKeypoints(poses);
-  drawSkeleton(poses);
+  // drawKeypoints(poses);
+  // drawSkeleton(poses);
 }
 
 function drawKeypoints(poses) {
@@ -171,15 +263,15 @@ function drawSkeleton(poses) {
 }
 
 
-function makeParticle(){
+function makeParticle() {
   // let initialX = 50 + 50*j
   let initialX = Math.random() * 1400
   let particle = {
-      x: initialX,
-      y: 0,
-      dx: (Math.random()*2)-1,
-      dy: Math.random()*2,
-      size: (Math.random() * 4) + 4
+    x: initialX,
+    y: 0,
+    dx: (Math.random() * 2) - 1,
+    dy: Math.random() * 2,
+    size: (Math.random() * 4) + 4
   }
 
   return particle
@@ -188,8 +280,8 @@ function makeParticle(){
 function processParticle(particle) {
 
 
-  if (particle.x > windowWidth || particle.x < 0){
-      particle.dx = -particle.dx
+  if (particle.x > windowWidth || particle.x < 0) {
+    particle.dx = -particle.dx
   }
 
   particle.dy = particle.dy + 0.01
@@ -198,79 +290,173 @@ function processParticle(particle) {
   particle.y = particle.y + particle.dy
   // console.log(particle)
 
-  fill(255,250,250,126)
+  fill(255, 250, 250, 126)
   noStroke()
-  ellipse(particle.x,particle.y,particle.size,particle.size)
-}
+  ellipse(particle.x, particle.y, particle.size, particle.size)
 
-let cxtoright = 0
-let cytoright = 0
-let dx
-let dy
- function makeMagic(){
-     let magicX = positionX + cxtoright
-     let magicY = positionY + cytoright
-     dx = nowvx/9
-     dy = nowvy/9
-    //  console.log(dx)
-     cxtoright = cxtoright + dx
-     cytoright = cytoright + dy
-    let magicToRight = {
-        x: magicX,
-        y: magicY,
-        size: (Math.random() * 5) + 3,
-        magicdx: (Math.random())-1,
-        magicdy: Math.random()*2,
+  for (var a = particles.length - 1; a > -1; a--) {
+    if (particles[a].y > 800) {
+      particles.splice(a, 1);
     }
-    return magicToRight;
+  }
+}
+
+let streaksright = [];
+// let cxright = 0
+// let cyright = 0
+// let dxright
+// let dyright
+function makeMagicright(streakright) {
+  console.log('make magic right')
+  let magicX = streakright.positionXright + streakright.cxright
+  let magicY = streakright.positionYright + streakright.cyright
+  let dxright = streakright.nowvxright / 9
+  let dyright = streakright.nowvyright / 9
+  streakright.cxright = streakright.cxright + dxright
+  streakright.cyright = streakright.cyright + dyright
+  let magicRight = {
+    x: magicX,
+    y: magicY,
+    size: (Math.random() * 5) + 3,
+    magicdx: (Math.random()) - 1,
+    magicdy: Math.random() * 2,
+  }
+  return magicRight;
 
 }
 
-function processMagicToRight(magicToRight){
-  fill(120,194,196,5)
+function processMagicRight(magicRight) {
+  fill(120, 194, 196, 5)
   noStroke()
-  circle(magicToRight.x,magicToRight.y,magicToRight.size+20) 
-  fill(120,194,196,10)
+  circle(magicRight.x, magicRight.y, magicRight.size + 20)
+  fill(120, 194, 196, 10)
   noStroke()
-  circle(magicToRight.x,magicToRight.y,magicToRight.size+15) 
-  fill(120,194,196,20)
+  circle(magicRight.x, magicRight.y, magicRight.size + 15)
+  fill(120, 194, 196, 20)
   noStroke()
-  circle(magicToRight.x,magicToRight.y,magicToRight.size+10) 
-  fill(120,194,196,30)
+  circle(magicRight.x, magicRight.y, magicRight.size + 10)
+  fill(120, 194, 196, 30)
   noStroke()
-  circle(magicToRight.x,magicToRight.y,magicToRight.size+6) 
-  fill(120,194,196,100)
+  circle(magicRight.x, magicRight.y, magicRight.size + 6)
+  fill(120, 194, 196, 100)
   noStroke()
-  circle(magicToRight.x,magicToRight.y,magicToRight.size+2) 
-  fill(120,194,196,150)
+  circle(magicRight.x, magicRight.y, magicRight.size + 2)
+  fill(120, 194, 196, 150)
   noStroke()
-  circle(magicToRight.x,magicToRight.y,magicToRight.size)
-  fill(120,194,196,190)
-  circle(magicToRight.x,magicToRight.y,magicToRight.size-1)
+  circle(magicRight.x, magicRight.y, magicRight.size)
+  fill(120, 194, 196, 190)
+  circle(magicRight.x, magicRight.y, magicRight.size - 1)
 
-  magicToRight.magicdy = magicToRight.magicdy * 0.995
-  magicToRight.magicdx = magicToRight.magicdx * 0.995
-  magicToRight.x = magicToRight.x + magicToRight.magicdx
-  magicToRight.y = magicToRight.y + magicToRight.magicdy
+  magicRight.magicdy = magicRight.magicdy * 0.995
+  magicRight.magicdx = magicRight.magicdx * 0.995
+  magicRight.x = magicRight.x + magicRight.magicdx
+  magicRight.y = magicRight.y + magicRight.magicdy
 
-  for (var i = magicsToRight.length-1; i > -1; i--) {
+  for (var i = magicsRight.length - 1; i > -1; i--) {
 
-  if (magicsToRight[i].magicdy < 0.8) {
-      magicsToRight.splice(i, 1);
+    if (magicsRight[i].magicdy < 0.8) {
+      magicsRight.splice(i, 1);
     }
   }
 
-  // console.log(cxtoright)
+  // if (sqrt(cxright*cxright+cyright*cyright)>500){
+  //     fastright = false
+  //     cxright = 0
+  //     cyright = 0
+  //     iceSound.pause();
+  // }
 
-  if (cxtoright >= 500 || cxtoright <= -500){
-      fast = false
-      cxtoright = 0
-      cytoright = 0
+  streaksright = streaksright.filter(streakIsNotDoneright);
+  if (streaksright.length == 0) {
+    iceSound.pause();
   }
 
 }
 
+function streakIsNotDoneright(streakright) {
+  return !streakIsDoneright(streakright)
+}
+function streakIsDoneright(streakright) {
+  return sqrt(streakright.cxright * streakright.cxright + streakright.cyright * streakright.cyright) > 500
+}
 
+
+// let cxleft = 0
+// let cyleft = 0
+// let dxleft
+// let dyleft
+let streaksleft = [];
+function makeMagicleft(streakleft) {
+  let magicX = streakleft.positionXleft + streakleft.cxleft
+  let magicY = streakleft.positionYleft + streakleft.cyleft
+  let dxleft = streakleft.nowvxleft / 9
+  let dyleft = streakleft.nowvyleft / 9
+  streakleft.cxleft = streakleft.cxleft + dxleft
+  streakleft.cyleft = streakleft.cyleft + dyleft
+  let magicleft = {
+    x: magicX,
+    y: magicY,
+    size: (Math.random() * 5) + 3,
+    magicdx: (Math.random()) - 1,
+    magicdy: Math.random() * 2,
+  }
+  return magicleft;
+}
+
+function processMagicLeft(magicleft) {
+  fill(120, 194, 196, 5)
+  noStroke()
+  circle(magicleft.x, magicleft.y, magicleft.size + 20)
+  fill(120, 194, 196, 10)
+  noStroke()
+  circle(magicleft.x, magicleft.y, magicleft.size + 15)
+  fill(120, 194, 196, 20)
+  noStroke()
+  circle(magicleft.x, magicleft.y, magicleft.size + 10)
+  fill(120, 194, 196, 30)
+  noStroke()
+  circle(magicleft.x, magicleft.y, magicleft.size + 6)
+  fill(120, 194, 196, 100)
+  noStroke()
+  circle(magicleft.x, magicleft.y, magicleft.size + 2)
+  fill(120, 194, 196, 150)
+  noStroke()
+  circle(magicleft.x, magicleft.y, magicleft.size)
+  fill(120, 194, 196, 190)
+  circle(magicleft.x, magicleft.y, magicleft.size - 1)
+
+  magicleft.magicdy = magicleft.magicdy * 0.995
+  magicleft.magicdx = magicleft.magicdx * 0.995
+  magicleft.x = magicleft.x + magicleft.magicdx
+  magicleft.y = magicleft.y + magicleft.magicdy
+
+  for (var i = magicsLeft.length - 1; i > -1; i--) {
+
+    if (magicsLeft[i].magicdy < 0.8) {
+      magicsLeft.splice(i, 1);
+    }
+  }
+
+  // if (sqrt(cxleft*cxleft+cyleft*cyleft)>500){
+  //     fastleft = false
+  //     cxleft = 0
+  //     cyleft= 0
+  //     iceSound.pause();
+  // }
+
+  streaksleft = streaksleft.filter(streakIsNotDoneleft)
+  if (streaksleft.length == 0) {
+    iceSound.pause();
+  }
+
+}
+
+function streakIsNotDoneleft(streakleft) {
+  return !streakIsDoneleft(streakleft)
+}
+function streakIsDoneleft(streakleft) {
+  return sqrt(streakleft.cxleft * streakleft.cxleft + streakleft.cyleft * streakleft.cyleft) > 500
+}
 
 
 

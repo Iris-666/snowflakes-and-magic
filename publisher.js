@@ -6,10 +6,12 @@ export function setup() {
   video = select("video") || createCapture(VIDEO);
   video.size(width, height);
   const poseNet = ml5.poseNet(video, () => select("#status").hide());
+  poseNet. maxPoseDetections = 1;
+
   poseNet.on("pose", drawPoses);
   video.hide();
 
-  stats.showPanel(0);
+  // stats.showPanel(0);
   document.body.appendChild(stats.dom);
 }
 
@@ -21,6 +23,7 @@ function drawPoses(poses) {
   image(video, 0, 0, video.width, video.height);
   localStorage['posenet'] = JSON.stringify(poses);
   drawKeypoints(poses);
+  console.info('pose count', poses.length)
   drawSkeleton(poses);
   pop();
   stats.end();
@@ -30,10 +33,17 @@ function drawKeypoints(poses) {
   poses.forEach(pose =>
     pose.pose.keypoints.forEach(keypoint => {
       if (keypoint.score > 0.2) {
+        text(keypoint.part,keypoint.position.x, keypoint.position.y)
+
+        if(keypoint.part == 'rightWirst'){
+          fill(0,0,255);
+          noStroke();
+          ellipse(keypoint.position.x, keypoint.position.y, 20, 20);
+        }else{
         fill(0, 255, 0);
         noStroke();
-        ellipse(keypoint.position.x, keypoint.position.y, 10, 10);
-      }
+        ellipse(keypoint.position.x, keypoint.position.y, 10, 10);}
+     }
     })
   );
 }
