@@ -45,6 +45,9 @@ let lastFastTimeleft;
 
 export function setup() {
   createCanvas(windowWidth, windowHeight);
+  console.log(windowWidth)
+  console.log(windowHeight)
+  // createCanvas(640,480);
 
   // stats.showPanel(0);
   // document.body.appendChild(stats.dom);
@@ -61,6 +64,7 @@ export function draw() {
   stats.begin();
   clear();
   if (latestPoses) {
+    scalePoses(latestPoses);
     drawPoses(latestPoses);
     stats.end();
   }
@@ -69,7 +73,7 @@ export function draw() {
   rect(0, 0, width, height)
   let t = frameCount / 60
 
-  for (let i = 0; i < random(2); i++) {
+  for (let i = 0; i < random(); i++) {
     particles.push(new makeParticle())
   }
 
@@ -86,22 +90,40 @@ export function draw() {
 
 }
 
+function scalePoses(poses) {
+  poses.forEach(pose => {
+    pose.pose.keypoints.forEach(kp => {
+      // console.info('x', kp.position.x)
+      kp.position.x *= width / 640;
+      kp.position.y *= height / 480;
+      // console.info('->', kp.position.x)
+    })
+
+  })
+}
+
 export function drawPoses(poses) {
   translate(width, 0);
   scale(-1.0, 1.0);
   if (latestPoses.length > 0) {
-    if (latestPoses[0].pose.rightWrist.confidence > 0.1) {
+    if (latestPoses[0].pose.rightWrist.confidence > 0.15) {
       // console.log(latestPoses[0].pose.rightEye.confidence);
       rightprevPoseX[0] = rightprevPoseX[1]
       rightprevPoseY[0] = rightprevPoseY[1]
-      rightprevPoseX[1] = latestPoses[0].pose.rightWrist.x
-      rightprevPoseY[1] = latestPoses[0].pose.rightWrist.y
+      rightprevPoseX[1] = latestPoses[0].pose.rightWrist.x *4
+      rightprevPoseY[1] = latestPoses[0].pose.rightWrist.y *3
+      console.log('x'+rightprevPoseX[1])
+      console.log('y'+rightprevPoseY[1])
+      fill(255,0,0)
+      ellipse(rightprevPoseX[1],rightprevPoseY[1],10,10)
     }
-    if (latestPoses[0].pose.leftWrist.confidence > 0.1) {
+    if (latestPoses[0].pose.leftWrist.confidence > 0.15) {
       leftprevPoseX[0] = leftprevPoseX[1]
       leftprevPoseY[0] = leftprevPoseY[1]
-      leftprevPoseX[1] = latestPoses[0].pose.leftWrist.x
-      leftprevPoseY[1] = latestPoses[0].pose.leftWrist.y
+      leftprevPoseX[1] = latestPoses[0].pose.leftWrist.x *4
+      leftprevPoseY[1] = latestPoses[0].pose.leftWrist.y *3
+      fill(255,0,0)
+      ellipse(leftprevPoseX[1],leftprevPoseY[1],10,10)
 
     }
 
@@ -156,7 +178,7 @@ export function drawPoses(poses) {
     function changeDirectionleft(nowvxleft, nowvyleft, vxleft, vyleft) {
       let prevAngleleft = atan2(nowvyleft, nowvxleft)
       let nowAngleleft = atan2(vyleft, vxleft)
-      if (abs(prevAngleleft - nowAngleleft) > 90 / 180 * PI) {
+      if (abs(prevAngleleft - nowAngleleft) > 60 / 180 * PI) {
         return true
       }
     }
@@ -178,7 +200,7 @@ export function drawPoses(poses) {
     }
 
 
-    if (vleft > 50 && (!lastFastTimeleft || new Date() - lastFastTimeleft > 100)) {
+    if (vleft > 50 && (!lastFastTimeleft || new Date() - lastFastTimeleft > 400)) {
       lastFastTimeleft = new Date();
       let streakleft = {
         cxleft: 0,
@@ -190,8 +212,8 @@ export function drawPoses(poses) {
       }
       streaksleft.unshift(streakleft);
     }
-    if (vright > 50 && (!lastFastTimeright || new Date() - lastFastTimeright > 100)) {
-      console.log('create streak right')
+    if (vright > 50 && (!lastFastTimeright || new Date() - lastFastTimeright > 400)) {
+      // console.log('create streak right')
       lastFastTimeright = new Date();
       let streakright = {
         cxright: 0,
@@ -211,12 +233,12 @@ export function drawPoses(poses) {
     }
 
     if (fastright) {
-      console.log('fastright')
+      // console.log('fastright')
       streaksright.forEach(startMagicright)
-      magicsRight = magicsRight.slice(0,100)
+      magicsRight = magicsRight.slice(0,90)
     }
     function startMagicright(streakright) {
-      console.log('start')
+      // console.log('start')
       for (let i = 0; i < random(5); i++) {
         magicsRight.unshift(new makeMagicright(streakright))
       }
@@ -224,18 +246,15 @@ export function drawPoses(poses) {
     }
     if (fastleft) {
       streaksleft.forEach(startMakeMagicleft)
-      magicsLeft=magicsLeft.slice(0,100)
+      magicsLeft=magicsLeft.slice(0,90)
     }
     function startMakeMagicleft(streakleft) {
       for (let i = 0; i < random(5); i++) {
         magicsLeft.unshift(new makeMagicleft(streakleft))
 
       }
-
     }
-
   }
-
   // drawKeypoints(poses);
   // drawSkeleton(poses);
 }
@@ -265,13 +284,13 @@ function drawSkeleton(poses) {
 
 function makeParticle() {
   // let initialX = 50 + 50*j
-  let initialX = Math.random() * 1400
+  let initialX = Math.random() * windowWidth
   let particle = {
     x: initialX,
     y: 0,
     dx: (Math.random() * 2) - 1,
-    dy: Math.random() * 2,
-    size: (Math.random() * 4) + 4
+    dy: Math.random() * 2+1,
+    size: (Math.random() * 8) + 8
   }
 
   return particle
@@ -295,7 +314,7 @@ function processParticle(particle) {
   ellipse(particle.x, particle.y, particle.size, particle.size)
 
   for (var a = particles.length - 1; a > -1; a--) {
-    if (particles[a].y > 800) {
+    if (particles[a].y > windowHeight) {
       particles.splice(a, 1);
     }
   }
@@ -317,7 +336,7 @@ function makeMagicright(streakright) {
   let magicRight = {
     x: magicX,
     y: magicY,
-    size: (Math.random() * 5) + 3,
+    size: (Math.random() * 8) + 8,
     magicdx: (Math.random()) - 1,
     magicdy: Math.random() * 2,
   }
@@ -328,19 +347,19 @@ function makeMagicright(streakright) {
 function processMagicRight(magicRight) {
   fill(120, 194, 196, 5)
   noStroke()
-  circle(magicRight.x, magicRight.y, magicRight.size + 20)
+  circle(magicRight.x, magicRight.y, magicRight.size + 30)
   fill(120, 194, 196, 10)
   noStroke()
-  circle(magicRight.x, magicRight.y, magicRight.size + 15)
+  circle(magicRight.x, magicRight.y, magicRight.size + 20)
   fill(120, 194, 196, 20)
   noStroke()
-  circle(magicRight.x, magicRight.y, magicRight.size + 10)
+  circle(magicRight.x, magicRight.y, magicRight.size + 15)
   fill(120, 194, 196, 30)
   noStroke()
-  circle(magicRight.x, magicRight.y, magicRight.size + 6)
+  circle(magicRight.x, magicRight.y, magicRight.size + 10)
   fill(120, 194, 196, 100)
   noStroke()
-  circle(magicRight.x, magicRight.y, magicRight.size + 2)
+  circle(magicRight.x, magicRight.y, magicRight.size + 5)
   fill(120, 194, 196, 150)
   noStroke()
   circle(magicRight.x, magicRight.y, magicRight.size)
@@ -354,7 +373,7 @@ function processMagicRight(magicRight) {
 
   for (var i = magicsRight.length - 1; i > -1; i--) {
 
-    if (magicsRight[i].magicdy < 0.8) {
+    if (magicsRight[i].magicdy < 0.9) {
       magicsRight.splice(i, 1);
     }
   }
@@ -370,6 +389,10 @@ function processMagicRight(magicRight) {
   if (streaksright.length == 0) {
     iceSound.pause();
   }
+  if(streaksright.length > 3){
+    streaksright.splice(4,streaksright.length - 3)
+  }
+
 
 }
 
@@ -377,7 +400,7 @@ function streakIsNotDoneright(streakright) {
   return !streakIsDoneright(streakright)
 }
 function streakIsDoneright(streakright) {
-  return sqrt(streakright.cxright * streakright.cxright + streakright.cyright * streakright.cyright) > 500
+  return sqrt(streakright.cxright * streakright.cxright + streakright.cyright * streakright.cyright) > 1000
 }
 
 
@@ -396,7 +419,7 @@ function makeMagicleft(streakleft) {
   let magicleft = {
     x: magicX,
     y: magicY,
-    size: (Math.random() * 5) + 3,
+    size: (Math.random() * 8) + 8,
     magicdx: (Math.random()) - 1,
     magicdy: Math.random() * 2,
   }
@@ -406,19 +429,19 @@ function makeMagicleft(streakleft) {
 function processMagicLeft(magicleft) {
   fill(120, 194, 196, 5)
   noStroke()
-  circle(magicleft.x, magicleft.y, magicleft.size + 20)
+  circle(magicleft.x, magicleft.y, magicleft.size + 30)
   fill(120, 194, 196, 10)
   noStroke()
-  circle(magicleft.x, magicleft.y, magicleft.size + 15)
+  circle(magicleft.x, magicleft.y, magicleft.size + 20)
   fill(120, 194, 196, 20)
   noStroke()
-  circle(magicleft.x, magicleft.y, magicleft.size + 10)
+  circle(magicleft.x, magicleft.y, magicleft.size + 15)
   fill(120, 194, 196, 30)
   noStroke()
-  circle(magicleft.x, magicleft.y, magicleft.size + 6)
+  circle(magicleft.x, magicleft.y, magicleft.size + 10)
   fill(120, 194, 196, 100)
   noStroke()
-  circle(magicleft.x, magicleft.y, magicleft.size + 2)
+  circle(magicleft.x, magicleft.y, magicleft.size + 5)
   fill(120, 194, 196, 150)
   noStroke()
   circle(magicleft.x, magicleft.y, magicleft.size)
@@ -432,7 +455,7 @@ function processMagicLeft(magicleft) {
 
   for (var i = magicsLeft.length - 1; i > -1; i--) {
 
-    if (magicsLeft[i].magicdy < 0.8) {
+    if (magicsLeft[i].magicdy < 0.9) {
       magicsLeft.splice(i, 1);
     }
   }
@@ -448,6 +471,9 @@ function processMagicLeft(magicleft) {
   if (streaksleft.length == 0) {
     iceSound.pause();
   }
+  if(streaksleft.length > 3){
+    streaksleft.splice(4,streaksleft.length - 3)
+  }
 
 }
 
@@ -455,7 +481,7 @@ function streakIsNotDoneleft(streakleft) {
   return !streakIsDoneleft(streakleft)
 }
 function streakIsDoneleft(streakleft) {
-  return sqrt(streakleft.cxleft * streakleft.cxleft + streakleft.cyleft * streakleft.cyleft) > 500
+  return sqrt(streakleft.cxleft * streakleft.cxleft + streakleft.cyleft * streakleft.cyleft) > 1000
 }
 
 

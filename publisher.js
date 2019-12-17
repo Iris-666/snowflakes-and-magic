@@ -23,7 +23,7 @@ function drawPoses(poses) {
   image(video, 0, 0, video.width, video.height);
   localStorage['posenet'] = JSON.stringify(poses);
   drawKeypoints(poses);
-  console.info('pose count', poses.length)
+  // console.info('pose count', poses.length)
   drawSkeleton(poses);
   pop();
   stats.end();
